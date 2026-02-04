@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Code2, Network, Cpu, Layout, AlertCircle, Sparkles, MessageSquareWarning, Bug, Terminal, ScanEye, Volume2, VolumeX } from 'lucide-react';
+import { Play, Code2, Network, Cpu, Layout, AlertCircle, Sparkles, MessageSquareWarning, Bug, Terminal, ScanEye, Volume2, VolumeX, Settings } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import VisualizerCanvas from './components/VisualizerCanvas';
 import Controls from './components/Controls';
@@ -7,10 +7,12 @@ import Console from './components/Console';
 import AIAssistant from './components/AIAssistant';
 import LiveTutor from './components/LiveTutor';
 import FeedbackModal from './components/FeedbackModal';
+import SettingsModal from './components/SettingsModal';
 import { LANGUAGES, TEMPLATES } from './constants';
 import { generateExecutionTrace, executeCode } from './services/geminiService';
 import { playTTS, stopTTS } from './services/ttsService';
 import { ExecutionTrace, Language } from './types';
+import { hasApiKey } from './utils/apiKey';
 
 // Regex patterns to detect if code might need input
 const INPUT_PATTERNS: Record<string, RegExp> = {
@@ -45,6 +47,9 @@ const App: React.FC = () => {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false);
   const [isFixing, setIsFixing] = useState<boolean>(false);
 
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
   // Narrator State
   const [isNarratorEnabled, setIsNarratorEnabled] = useState<boolean>(false);
   const isNarratingRef = useRef<boolean>(false); // Ref to track async playback status
@@ -70,14 +75,26 @@ const App: React.FC = () => {
   };
 
   const handleExecute = async (mode: 'visualize' | 'run' | 'fix', feedback?: string) => {
-    if (!process.env.API_KEY) {
+    // Basic check for API key presence
+    if (!hasApiKey()) {
         try {
+            // Internal Google fallback
             if (window.aistudio && await window.aistudio.hasSelectedApiKey()) {
                 // Good
             } else if (window.aistudio) {
                  await window.aistudio.openSelectKey();
+                 return;
+            } else {
+                 // Public fallback
+                 setIsSettingsOpen(true);
+                 setError("Please enter your Gemini API Key in Settings to continue.");
+                 return;
             }
-        } catch(e) { /* ignore if not in that env */ }
+        } catch(e) { 
+             setIsSettingsOpen(true);
+             setError("Please enter your Gemini API Key in Settings to continue.");
+             return;
+        }
     }
 
     if (mode === 'fix') {
@@ -141,8 +158,8 @@ const App: React.FC = () => {
             }
         }
       }
-    } catch (e) {
-      setError("Execution failed. Please try again.");
+    } catch (e: any) {
+      setError(e.message || "Execution failed. Please try again.");
     } finally {
       setIsGenerating(false);
       setIsFixing(false);
@@ -326,6 +343,15 @@ const App: React.FC = () => {
 
             <div className="h-6 w-px bg-slate-700 mx-1"></div>
 
+             {/* Settings Toggle */}
+             <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                title="API Settings"
+            >
+                <Settings size={18} />
+            </button>
+
             {/* Visualize Button */}
             <button
                 onClick={() => handleExecute('visualize')}
@@ -484,13 +510,22 @@ const App: React.FC = () => {
             isFixing={isFixing}
         />
 
+        {/* Settings Modal */}
+        <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+        />
+
       </main>
 
       {/* Global API Key Helper */}
-      {!process.env.API_KEY && (
-          <div className="absolute bottom-4 right-4 max-w-sm bg-yellow-900/90 text-yellow-100 p-4 rounded-lg shadow-xl border border-yellow-700 text-sm z-50 backdrop-blur">
-              <strong>Demo Mode:</strong> Please ensure the API Key is set in the environment.
-          </div>
+      {!hasApiKey() && !isSettingsOpen && (
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="absolute bottom-4 right-4 max-w-sm bg-yellow-900/90 text-yellow-100 p-4 rounded-lg shadow-xl border border-yellow-700 text-sm z-50 backdrop-blur hover:bg-yellow-800 transition-colors text-left"
+          >
+              <strong>Demo Mode:</strong> Click here to configure your Gemini API Key.
+          </button>
       )}
     </div>
   );

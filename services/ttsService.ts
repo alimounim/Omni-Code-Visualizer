@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { base64Decode, pcmToAudioBuffer } from './audioUtils';
+import { getApiKey } from "../utils/apiKey";
 
 let audioContext: AudioContext | null = null;
 let currentSource: AudioBufferSourceNode | null = null;
@@ -39,7 +40,8 @@ export const stopTTS = () => {
  * Returns false ONLY if playback was explicitly interrupted/cancelled by a newer request or stop command.
  */
 export const playTTS = async (text: string): Promise<boolean> => {
-    if (!process.env.API_KEY) return true; // Fail open if no key (simulate success to keep loop moving)
+    const apiKey = getApiKey();
+    if (!apiKey) return true; // Fail open if no key (simulate success to keep loop moving)
     if (!text) return true;
 
     // 1. Setup new playback ID
@@ -51,7 +53,7 @@ export const playTTS = async (text: string): Promise<boolean> => {
         currentSource = null;
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     try {
         // 2. Async Network Request

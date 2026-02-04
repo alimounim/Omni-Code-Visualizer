@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ExecutionTrace, Language } from "../types";
+import { getApiKey } from "../utils/apiKey";
 
 const SYSTEM_INSTRUCTION = `
 You are the "Omni-Code Execution Engine". Your goal is to analyze code and generate a detailed, step-by-step execution trace in JSON format.
@@ -67,11 +68,12 @@ Return a JSON object containing a "steps" array.
 `;
 
 export const generateExecutionTrace = async (code: string, language: Language, feedback?: string): Promise<ExecutionTrace> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing. Please select an API key.");
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please configure it in Settings.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   let prompt = `
     Language: ${language}
@@ -124,11 +126,12 @@ export const generateExecutionTrace = async (code: string, language: Language, f
  * Can handle simulated stdin if provided.
  */
 export const executeCode = async (code: string, language: Language, stdin: string = ""): Promise<string> => {
-  if (!process.env.API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     throw new Error("API Key is missing.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   let prompt = `
     Language: ${language}
@@ -173,9 +176,10 @@ export const executeCode = async (code: string, language: Language, stdin: strin
 };
 
 export const askGemini = async (message: string, codeContext: string, language: string): Promise<string> => {
-    if (!process.env.API_KEY) throw new Error("API Key is missing.");
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error("API Key is missing.");
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     // We use Flash for the assistant for speed and responsiveness.
     const model = 'gemini-3-flash-preview'; 

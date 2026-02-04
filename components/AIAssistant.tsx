@@ -3,6 +3,7 @@ import { Sparkles, Send, X, Copy, Check, MessageSquare, Monitor } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion';
 import { askGemini } from '../services/geminiService';
 import { GoogleGenAI } from '@google/genai';
+import { getApiKey } from '../utils/apiKey';
 
 interface AIAssistantProps {
   code: string;
@@ -69,6 +70,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ code, language, onApplyCode, 
   const handleSend = async (screenshotBase64?: string) => {
     if ((!input.trim() && !screenshotBase64) || isLoading) return;
 
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        setMessages(prev => [...prev, { role: 'ai', content: "Please configure your API Key in Settings to use the Assistant." }]);
+        return;
+    }
+
     const userMsg = input;
     setInput('');
     
@@ -84,9 +91,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ code, language, onApplyCode, 
     try {
         // We handle the API call here directly to support images, 
         // effectively overriding the simpler 'askGemini' service for this multimodal case.
-        if (!process.env.API_KEY) throw new Error("Missing API Key");
-        
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         
         const parts: any[] = [];
         if (screenshotBase64) {

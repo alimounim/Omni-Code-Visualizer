@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Radio, Volume2, X, Monitor, StopCircle, Loader2 } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { createAudioBlob, base64Decode, pcmToAudioBuffer } from '../services/audioUtils';
+import { getApiKey } from '../utils/apiKey';
 
 interface LiveTutorProps {
   code: string;
@@ -164,8 +165,9 @@ const LiveTutor: React.FC<LiveTutorProps> = ({ code, language }) => {
   };
 
   const startSession = async () => {
-    if (!process.env.API_KEY) {
-        alert("Please set your API Key to use the Live Tutor.");
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert("Please set your API Key in Settings to use the Live Tutor.");
         return;
     }
 
@@ -195,7 +197,7 @@ const LiveTutor: React.FC<LiveTutorProps> = ({ code, language }) => {
         processor.connect(inputCtx.destination);
 
         // --- 2. Gemini Connection ---
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         
         const sessionPromise = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-12-2025',
