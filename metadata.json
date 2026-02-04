@@ -1,0 +1,7 @@
+{
+  "name": "Omni-Code-Visualizer",
+  "description": "A multi-language code visualizer and IDE. Write code in Python, JS, C++, Java, or Go, and watch the data structures and memory evolve step-by-step.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
